@@ -9,6 +9,7 @@ library(dplyr)
 library(tidyr)
 library(RVAideMemoire)
 library(rcompanion)
+library(DescTools)
 ```
 
 ### Contexto
@@ -22,24 +23,301 @@ Para esos casos, la lectura 7 propone dos caminos: transformar los datos para qu
 #### Pregunta 1
 Considerando las instancias con 60 o más nodos, ¿hay diferencias entre los tiempos de ejecución de las versiones A, B y C del algoritmo? Con la semilla 300, saquen 13 instancias para la versión A, 15 instancias para la versión B y 12 instancias para la versión C, todas distintas (muestras independientes). Si sacaron bien la muestra, deberían obtener: A, n = 13 y media 1.379.668; B, n = 15 y media 1.711.541; C, n = 12 y media 919.543,1 [ms].
 
+### Qué prueba vamos a usar
+
+ANOVA de 1 vía para muestras independientes dado que hay 3 grupos (A, B y C) y se asume que las muestras son independientes.
+
+### Condiciones
+
+* **Independencia:** Las muestras son independientes porque son distintas y se obtuvieron aleatoriamente y separadas.
+* **Normalidad:** La población sigue una distribución normal.
+* **Homocedasticidad:** Las muestras tienen la misma varianza. 
+
+
+##### Comprobación de condiciones de Anova  
+```{r}
+datos <- read.csv("EP06 Datos.csv")
+
+# Filtrar instancias con 60 o más nodos
+datos_p1_filtrados <- datos %>% filter(n.nodos >= 60)
+
+# Muestreo con semilla 300 (40 instancias distintas en total)
+set.seed(300)
+instancias <- sample(datos_p1_filtrados$instancia, 13 + 15 + 12, replace = FALSE)
+
+inst_A <- instancias[1:13]
+inst_B <- instancias[14:28]
+inst_C <- instancias[29:40]
+
+# Construir muestras independientes para cada versión del algoritmo
+muestra_A <- datos_p1_filtrados %>%
+  filter(instancia %in% inst_A) %>%
+  select(instancia, tiempo = tiempo.A) %>%
+  mutate(algoritmo = "A")
+
+muestra_B <- datos_p1_filtrados %>%
+  filter(instancia %in% inst_B) %>%
+  select(instancia, tiempo = tiempo.B) %>%
+  mutate(algoritmo = "B")
+
+muestra_C <- datos_p1_filtrados %>%
+  filter(instancia %in% inst_C) %>%
+  select(instancia, tiempo = tiempo.C) %>%
+  mutate(algoritmo = "C")
+
+# Unir muestras en formato tidy
+datos_p1 <- bind_rows(muestra_A, muestra_B, muestra_C) %>%
+  mutate(algoritmo = as.factor(algoritmo))
+
+# Verificación según valores de control del enunciado
+datos_p1 %>%
+  group_by(algoritmo) %>%
+  summarise(
+    n = n(),
+    media = round(mean(tiempo), 1)
+  )
+
+# Prueba de normalidad con Shapiro-Wilk por algoritmo
+shapiro_A <- shapiro.test(datos_p1$tiempo[datos_p1$algoritmo == "A"])
+shapiro_B <- shapiro.test(datos_p1$tiempo[datos_p1$algoritmo == "B"])
+shapiro_C <- shapiro.test(datos_p1$tiempo[datos_p1$algoritmo == "C"])
+
+# Prueba de homocedasticidad con Levene
+pru_levene <- LeveneTest(tiempo ~ algoritmo, data = datos_p1, center = median)
+
+# Mostrar resultados
+cat("=== Prueba de normalidad (Shapiro-Wilk) ===\n")
+print(shapiro_A)
+print(shapiro_B)
+print(shapiro_C)
+
+cat("\n=== Prueba de homocedasticidad (Levene) ===\n")
+print(pru_levene)
+
+# Gráficos para visualizar distribuciones
+library(ggplot2)
+ggplot(datos_p1, aes(x = algoritmo, y = tiempo, fill = algoritmo)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribución del tiempo de ejecución por algoritmo",
+    x = "Algoritmo", y = "Tiempo de ejecución [ms]"
+  ) +
+  theme_minimal()
+
+ggplot(datos_p1, aes(x = tiempo, fill = algoritmo)) +
+  geom_histogram(binwidth = 50000, color = "white") +
+  facet_wrap(~algoritmo, scales = "free_y") +
+  labs(
+    title = "Histograma del tiempo de ejecución por algoritmo",
+    x = "Tiempo de ejecución [ms]", y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
+### Analisis
+Dada las condiciones la prueba por rangos que se elige es 
+
+
 #### Pregunta 2
 Considerando las instancias con 90 o más nodos, ¿hay diferencias entre los tiempos de ejecución de las versiones B y C del algoritmo? Con la semilla 660, saquen 24 instancias para la versión B y 21 instancias para la versión C, todas distintas (muestras independientes). Si sacaron bien la muestra, deberían obtener: B, n = 24 y media 2.595.205; C, n = 21 y media 1.389.397 [ms].
+
+### Qué prueba vamos a usar
+
+t de student dado que solo hay 2 grupos y que las muestras son independientes.
+
+### Condiciones
+
+* **Independencia:** Las muestras son independientes porque son distintas y se obtuvieron aleatoriamente y separadas.
+* **Normalidad:** La población sigue una distribución normal.
+* **Homocedasticidad:** Las muestras tienen la misma varianza 
+
+```{r}
+# Filtrar instancias con 90 o más nodos
+datos_p2_filtrados <- datos %>% filter(n.nodos >= 90)
+
+# Muestreo con semilla 660 (45 instancias distintas en total)
+set.seed(660)
+instancias <- sample(datos_p2_filtrados$instancia, 24 + 21, replace = FALSE)
+
+inst_B <- instancias[1:24]
+inst_C <- instancias[25:45]
+
+# Construir muestras independientes para cada versión del algoritmo
+muestra_B <- datos_p2_filtrados %>%
+  filter(instancia %in% inst_B) %>%
+  select(instancia, tiempo = tiempo.B) %>%
+  mutate(algoritmo = "B")
+
+muestra_C <- datos_p2_filtrados %>%
+  filter(instancia %in% inst_C) %>%
+  select(instancia, tiempo = tiempo.C) %>%
+  mutate(algoritmo = "C")
+
+# Unir muestras en formato tidy
+datos_p2 <- bind_rows(muestra_B, muestra_C) %>%
+  mutate(algoritmo = as.factor(algoritmo))
+
+# Verificación según valores de control del enunciado
+datos_p2 %>%
+  group_by(algoritmo) %>%
+  summarise(
+    n = n(),
+    media = round(mean(tiempo), 1)
+  )
+
+# Prueba de normalidad con Shapiro-Wilk por algoritmo
+shapiro_B <- shapiro.test(datos_p2$tiempo[datos_p2$algoritmo == "B"])
+shapiro_C <- shapiro.test(datos_p2$tiempo[datos_p2$algoritmo == "C"])
+
+# Prueba de homocedasticidad con Levene
+pru_levene <- LeveneTest(tiempo ~ algoritmo, data = datos_p2, center = median)
+
+# Mostrar resultados
+cat("=== Prueba de normalidad (Shapiro-Wilk) ===\n")
+print(shapiro_B)
+print(shapiro_C)
+
+cat("\n=== Prueba de homocedasticidad (Levene) ===\n")
+print(pru_levene)
+
+# Gráficos para visualizar distribuciones
+library(ggplot2)
+ggplot(datos_p2, aes(x = algoritmo, y = tiempo, fill = algoritmo)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribución del tiempo de ejecución por algoritmo",
+    x = "Algoritmo", y = "Tiempo de ejecución [ms]"
+  ) +
+  theme_minimal()
+
+ggplot(datos_p2, aes(x = tiempo, fill = algoritmo)) +
+  geom_histogram(binwidth = 50000, color = "white") +
+  facet_wrap(~algoritmo, scales = "free_y") +
+  labs(
+    title = "Histograma del tiempo de ejecución por algoritmo",
+    x = "Tiempo de ejecución [ms]", y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
 
 #### Pregunta 3
 Considerando las instancias con 60 o más nodos, ¿hay diferencias entre los tiempos de ejecución de las versiones A y B del algoritmo? Con la semilla 781, saquen 15 instancias para la versión A y 14 instancias para la versión B, todas distintas (muestras independientes). Si sacaron bien la muestra, deberían obtener: A, n = 15 y media 1.338.905; B, n = 14 y media 2.063.490 [ms].
 
+### Qué prueba vamos a usar
+
+t de student dado que solo hay 2 grupos y que las muestras son independientes.
+
+### Condiciones
+
+* **Independencia:** Las muestras son independientes porque son distintas y se obtuvieron aleatoriamente y separadas.
+* **Normalidad:** La población sigue una distribución normal.
+* **Homocedasticidad:** Las muestras tienen la misma varianza 
+
+```{r}
+# Filtrar instancias con 90 o más nodos
+datos_p3_filtrados <- datos %>% filter(n.nodos >= 60)
+
+# Muestreo con semilla 781 (29 instancias distintas en total)
+set.seed(781)
+instancias <- sample(datos_p3_filtrados$instancia, 15 + 14, replace = FALSE)
+
+inst_A <- instancias[1:15]
+inst_B <- instancias[16:29]
+
+# Construir muestras independientes para cada versión del algoritmo
+muestra_A <- datos_p3_filtrados %>%
+  filter(instancia %in% inst_A) %>%
+  select(instancia, tiempo = tiempo.A) %>%
+  mutate(algoritmo = "A")
+
+muestra_B <- datos_p3_filtrados %>%
+  filter(instancia %in% inst_B) %>%
+  select(instancia, tiempo = tiempo.B) %>%
+  mutate(algoritmo = "B")
+
+# Unir muestras en formato tidy
+datos_p3 <- bind_rows(muestra_A, muestra_B) %>%
+  mutate(algoritmo = as.factor(algoritmo))
+
+# Verificación según valores de control del enunciado
+datos_p3 %>%
+  group_by(algoritmo) %>%
+  summarise(
+    n = n(),
+    media = round(mean(tiempo), 1)
+  )
+
+# Prueba de normalidad con Shapiro-Wilk por algoritmo
+shapiro_A <- shapiro.test(datos_p3$tiempo[datos_p3$algoritmo == "A"])
+shapiro_B <- shapiro.test(datos_p3$tiempo[datos_p3$algoritmo == "B"])
+
+# Prueba de homocedasticidad con Levene
+pru_levene <- LeveneTest(tiempo ~ algoritmo, data = datos_p3, center = median)
+
+# Mostrar resultados
+cat("=== Prueba de normalidad (Shapiro-Wilk) ===\n")
+print(shapiro_A)
+print(shapiro_B)
+
+cat("\n=== Prueba de homocedasticidad (Levene) ===\n")
+print(pru_levene)
+
+# Gráficos para visualizar distribuciones
+library(ggplot2)
+ggplot(datos_p3, aes(x = algoritmo, y = tiempo, fill = algoritmo)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribución del tiempo de ejecución por algoritmo",
+    x = "Algoritmo", y = "Tiempo de ejecución [ms]"
+  ) +
+  theme_minimal()
+
+ggplot(datos_p3, aes(x = tiempo, fill = algoritmo)) +
+  geom_histogram(binwidth = 50000, color = "white") +
+  facet_wrap(~algoritmo, scales = "free_y") +
+  labs(
+    title = "Histograma del tiempo de ejecución por algoritmo",
+    x = "Tiempo de ejecución [ms] ", y = "Frecuencia"
+  ) +
+  theme_minimal()
+```
+
 #### Pregunta 4
 Considerando las instancias con 70 o más nodos, ¿hay diferencias entre las mejores soluciones que encuentran las versiones A y B del algoritmo cuando resuelven las mismas instancias? Con la semilla 777, saquen 25 instancias y usen sus resultados con las dos versiones. Si sacaron bien la muestra, deberían obtener: n = 25; A, media 98,119; B, media 95,731 [% del óptimo].
+
+### Qué prueba vamos a usar
+
+t-test pareado dado que solo hay 2 grupos y que las muestras son dependientes.
+
+### Condiciones
+
+* **Dependencia:** Las muestras son dependientes dado que se resuelven las mismas instancias con las dos versiones.
+* **Normalidad:** La población sigue una distribución normal.
+* **Homocedasticidad:** Las muestras tienen la misma varianza 
 
 #### Pregunta 5
 Considerando las instancias con 80 o más nodos, ¿hay diferencias entre los tiempos de ejecución de las versiones A, B y C del algoritmo? Con la semilla 869, saquen 16 instancias para la versión A, 13 instancias para la versión B y 15 instancias para la versión C, todas distintas (muestras independientes). Si sacaron bien la muestra, deberían obtener: A, n = 16 y media 1.766.128; B, n = 13 y media 2.309.595; C, n = 15 y media 1.260.024 [ms].
 
+### Qué prueba vamos a usar
+
+ANOVA de 1 vía para muestras independientes dado que hay 3 grupos y que las muestras son independientes.
+
+### Condiciones
+
+* **Independencia:** Las muestras son independientes porque son distintas y se obtuvieron aleatoriamente y separadas.
+* **Normalidad:** La población sigue una distribución normal.
+* **Homocedasticidad:** Las muestras tienen la misma varianza 
+
 #### Pregunta 6
 Considerando las instancias con 50 o más nodos, ¿hay diferencias entre las mejores soluciones que encuentran las versiones A, B y C del algoritmo cuando resuelven las mismas instancias? Con la semilla 351, saquen 19 instancias y usen sus resultados con las tres versiones. Si sacaron bien la muestra, deberían obtener: n = 19; A, media 97,941; B, media 95,912; C, media 97,415 [% del óptimo].
 
+### Qué prueba vamos a usar
 
+ANOVA de 1 vía para muestras independientes dado que hay 3 grupos y que las muestras son independientes.
 
+### Condiciones
 
-```{r}
+* **Independencia:** k muestras obtenidas aleatoriamente y separadas.
+* **Normalidad:** La población sigue una distribución normal 
+* **Homocedasticidad:** Las muestras tienen la misma varianza 
 
-```
