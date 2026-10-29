@@ -1,0 +1,16 @@
+---
+title: "EP06-avance1-equipo-03.Rmd"
+output: html_document
+date: "`r Sys.Date()`"
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(RVAideMemoire)
+library(rcompanion)
+```
+
+```{r}
+
+```

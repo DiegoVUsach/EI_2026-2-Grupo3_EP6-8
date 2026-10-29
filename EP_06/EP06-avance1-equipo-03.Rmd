@@ -1,7 +1,7 @@
 ---
 title: "EP06-avance1-equipo-03.Rmd"
 output: html_document
-date: "system.date()"
+date: "`r Sys.Date()`"
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -10,6 +10,35 @@ library(tidyr)
 library(RVAideMemoire)
 library(rcompanion)
 ```
+
+### Contexto
+Hasta ahora hemos inferido sobre medias y proporciones con pruebas que se apoyan en el modelo normal.
+Con las proporciones, cuando sus condiciones no se cumplían, recurrimos a pruebas no paramétricas para frecuencias, como la exacta de Fisher o la de McNemar. 
+Con variables numéricas pasa algo parecido: muchas veces la variable que nos interesa se carga hacia un lado, tiene valores muy extremos o está acotada, y las pruebas para medias dejan de ser confiables.
+
+Para esos casos, la lectura 7 propone dos caminos: transformar los datos para que sí cumplan las condiciones, y aplicar la prueba paramétrica en la nueva escala, o usar una prueba basada en rangos (la de suma de rangos o la de rangos con signo de Wilcoxon, la de Kruskal-Wallis o la de Friedman), que no supone normalidad pero contrasta otras hipótesis. Cuál corresponde depende de los datos y de lo que interesa saber.
+
+
+#### Pregunta 1
+Considerando las instancias con 60 o más nodos, ¿hay diferencias entre los tiempos de ejecución de las versiones A, B y C del algoritmo? Con la semilla 300, saquen 13 instancias para la versión A, 15 instancias para la versión B y 12 instancias para la versión C, todas distintas (muestras independientes). Si sacaron bien la muestra, deberían obtener: A, n = 13 y media 1.379.668; B, n = 15 y media 1.711.541; C, n = 12 y media 919.543,1 [ms].
+
+#### Pregunta 2
+Considerando las instancias con 90 o más nodos, ¿hay diferencias entre los tiempos de ejecución de las versiones B y C del algoritmo? Con la semilla 660, saquen 24 instancias para la versión B y 21 instancias para la versión C, todas distintas (muestras independientes). Si sacaron bien la muestra, deberían obtener: B, n = 24 y media 2.595.205; C, n = 21 y media 1.389.397 [ms].
+
+#### Pregunta 3
+Considerando las instancias con 60 o más nodos, ¿hay diferencias entre los tiempos de ejecución de las versiones A y B del algoritmo? Con la semilla 781, saquen 15 instancias para la versión A y 14 instancias para la versión B, todas distintas (muestras independientes). Si sacaron bien la muestra, deberían obtener: A, n = 15 y media 1.338.905; B, n = 14 y media 2.063.490 [ms].
+
+#### Pregunta 4
+Considerando las instancias con 70 o más nodos, ¿hay diferencias entre las mejores soluciones que encuentran las versiones A y B del algoritmo cuando resuelven las mismas instancias? Con la semilla 777, saquen 25 instancias y usen sus resultados con las dos versiones. Si sacaron bien la muestra, deberían obtener: n = 25; A, media 98,119; B, media 95,731 [% del óptimo].
+
+#### Pregunta 5
+Considerando las instancias con 80 o más nodos, ¿hay diferencias entre los tiempos de ejecución de las versiones A, B y C del algoritmo? Con la semilla 869, saquen 16 instancias para la versión A, 13 instancias para la versión B y 15 instancias para la versión C, todas distintas (muestras independientes). Si sacaron bien la muestra, deberían obtener: A, n = 16 y media 1.766.128; B, n = 13 y media 2.309.595; C, n = 15 y media 1.260.024 [ms].
+
+#### Pregunta 6
+Considerando las instancias con 50 o más nodos, ¿hay diferencias entre las mejores soluciones que encuentran las versiones A, B y C del algoritmo cuando resuelven las mismas instancias? Con la semilla 351, saquen 19 instancias y usen sus resultados con las tres versiones. Si sacaron bien la muestra, deberían obtener: n = 19; A, media 97,941; B, media 95,912; C, media 97,415 [% del óptimo].
+
+
+
 
 ```{r}
 
